@@ -2,11 +2,15 @@ import { z } from "zod";
 import { procedure, router } from "../trpc";
 import webpush from "web-push";
 
-webpush.setVapidDetails(
-  "https://pushy-next-app.vercel.app/",
-  process.env.VAPID_PUBLIC_KEY as string,
-  process.env.VAPID_PRIVATE_KEY as string
-);
+try {
+  webpush.setVapidDetails(
+    "https://pushy-next-app.vercel.app/",
+    process.env.VAPID_PUBLIC_KEY as string,
+    process.env.VAPID_PRIVATE_KEY as string
+  );
+} catch (e) {
+  console.error('Failed to set vapid details for web-push', e);
+}
 
 type UserPushSub = {
   name: string;

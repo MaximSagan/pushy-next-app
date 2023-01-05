@@ -73,7 +73,6 @@ export default function Home({ publicKey }: Props) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className={styles.main}>
-        <div className={styles.description}>
           <p>From TRPC: { hello.data ? hello.data.greeting : 'Loading...'}</p>
           <p>Public key: {publicKey}</p>
           <p>
@@ -83,19 +82,16 @@ export default function Home({ publicKey }: Props) {
           <p>Put sub result:&nbsp;
             <code className={styles.code}>{JSON.stringify(putSubMutation.data?.message)}</code>   
           </p>
-          <p>
-            <form onSubmit={() => sendNotification()}>
-              <label>Content:</label>
-              <input type="text" ref={notificationContentRef} />
-              <label>Send notification in (x) seconds:</label>
-              <input type="number" ref={notificationCountdownRef} />
-              <button type="submit">Send notification</button>
-            </form>
-          </p>
+          <form className={styles.form} onSubmit={() => sendNotification()}>
+            <label>Content:</label>
+            <input type="text" ref={notificationContentRef} defaultValue="Hi" />
+            <label>Send notification in (x) seconds:</label>
+            <input type="number" ref={notificationCountdownRef} defaultValue={3}  />
+            <button type="submit">Send notification</button>
+          </form>
           <p>Send notification result:&nbsp;
             <code className={styles.code}>{JSON.stringify(postNotificationMutation.data?.results)}</code>   
           </p>
-        </div>
       </main>
     </>
   );
