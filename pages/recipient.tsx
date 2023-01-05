@@ -14,47 +14,59 @@ export default function Recipient({ publicKey }: Props) {
 
   const [pushSub, setPushSub] = useState<PushSubscriptionJSON | null>(null);
 
-  useEffect(() => {
-    console.log(globalThis.constructor.name);
-    const requestPushNotifications = async () => {
-      const isSupported =
-        "serviceWorker" in navigator && "PushManager" in window;
-      if (!isSupported) {
-        console.error("Not supported");
-        return;
-      }
+  useEffect(
+    () => {
+      console.log(globalThis.constructor.name);
+      const requestPushNotifications = async () => {
+        const isSupported =
+          "serviceWorker" in navigator && "PushManager" in window;
+        if (!isSupported) {
+          console.error("Not supported");
+          return;
+        }
 
-      if (!publicKey) {
-        console.error("No key");
-        return;
-      }
+        if (!publicKey) {
+          console.error("No key");
+          return;
+        }
 
-      let swRegistration = await navigator.serviceWorker.getRegistration();
-      if (!swRegistration) {
-        swRegistration = await navigator.serviceWorker.register("/recipient/sw.js");
-      }
-      console.log(swRegistration);
+        let swRegistration = await navigator.serviceWorker.getRegistration(
+          "/recipient/"
+        );
+        if (!swRegistration) {
+          console.log("Registering new service worker");
+          swRegistration = await navigator.serviceWorker.register(
+            "/recipient/sw.js"
+          );
+        }
+        console.log(swRegistration);
 
-      const permissionRequestResult = await Notification.requestPermission();
-      if (permissionRequestResult !== "granted") {
-        console.error("Need to grant permission");
-        return;
-      }
-      const serviceWorker = await navigator.serviceWorker.ready;
-      let sub = await serviceWorker.pushManager.getSubscription();
-      if (!sub) {
-        sub = await serviceWorker.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: publicKey,
-        });
-      }
-      console.log(sub);
-      setPushSub(sub.toJSON());
+        const permissionRequestResult = await Notification.requestPermission();
+        if (permissionRequestResult !== "granted") {
+          console.error("Need to grant permission");
+          return;
+        }
+        console.log('Waiting until SW is ready...');
+        const serviceWorker = await navigator.serviceWorker.ready;
+        console.log('SW is ready!');
+        let sub = await serviceWorker.pushManager.getSubscription();
+        if (!sub) {
+          console.log("Creating new push subscription");
+          sub = await serviceWorker.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: publicKey,
+          });
+        }
+        console.log(sub);
+        setPushSub(sub.toJSON());
 
-      await putSubMutation.mutateAsync({ name: "Bob", pushSub: sub });
-    };
-    requestPushNotifications().catch(console.error);
-  }, [publicKey]);
+        await putSubMutation.mutateAsync({ name: "Bob", pushSub: sub });
+      };
+      requestPushNotifications().catch(console.error);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [publicKey]
+  );
 
 
   return (
