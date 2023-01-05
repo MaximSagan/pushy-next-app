@@ -1,4 +1,5 @@
 import Head from "next/head";
+import Link from "next/link";
 import Image from "next/image";
 import { Inter } from "@next/font/google";
 import styles from "../styles/Home.module.css";
@@ -125,10 +126,10 @@ export default function Home() {
       </Head>
       <main className={styles.main}>
         <p>
-          <a href="/recipient">Recipient</a>
+          <Link href="/recipient">Recipient</Link>
         </p>
         <p>
-          <a href="/sender">Sender</a>
+          <Link href="/sender">Sender</Link>
         </p>
       </main>
     </>
