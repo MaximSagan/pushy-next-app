@@ -11,7 +11,7 @@ export const appRouter = router({
       return {
         greeting: `hello ${input.text}`,
       };
-    }),
+    })
 });
 // export type definition of API
 export type AppRouter = typeof appRouter;
