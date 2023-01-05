@@ -126,7 +126,8 @@ export default function Home() {
       </Head>
       <main className={styles.main}>
         <p>
-          <Link href="/recipient">Recipient</Link>
+          {/* But use <a> routing. If we use internal routing the scoped service worker will not load! */}
+          <a href="/recipient">Recipient</a>
         </p>
         <p>
           <Link href="/sender">Sender</Link>
