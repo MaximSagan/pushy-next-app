@@ -42,8 +42,7 @@ export default function Home({ publicKey }: Props) {
         userVisibleOnly: true,
         applicationServerKey: publicKey
       });
-      setPushSub(newSub.toJSON())
-
+      setPushSub(newSub.toJSON());
     }
     requestPushNotifications().catch(console.error);
     
