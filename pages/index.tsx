@@ -33,28 +33,32 @@ export default function Home({ publicKey }: Props) {
       }
       
       let swRegistration = await navigator.serviceWorker.getRegistration();
+      console.log(swRegistration);
       if (!swRegistration) {
         swRegistration = await navigator.serviceWorker.register("/sw.js");
       }
       console.log(swRegistration);
+
       const permissionRequestResult =  await Notification.requestPermission();
       if (permissionRequestResult !== 'granted') {
         console.error('Need to grant permission');
         return;
       }
       const serviceWorker = await navigator.serviceWorker.ready;
-      const newSub = await serviceWorker.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: publicKey
-      });
-      setPushSub(newSub.toJSON());
+      let sub = await serviceWorker.pushManager.getSubscription();
+      if (!sub) {
+        sub = await serviceWorker.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: publicKey
+        });
+      }
+      setPushSub(sub.toJSON());
 
-      await putSubMutation.mutateAsync({ name: 'Bob', pushSub: newSub });
-      
+      await putSubMutation.mutateAsync({ name: 'Bob', pushSub: sub });   
     }
     requestPushNotifications().catch(console.error);
     
-  }, [publicKey])
+  }, [publicKey, putSubMutation])
 
   const notificationContentRef = useRef<HTMLInputElement>(null);
   const notificationCountdownRef = useRef<HTMLInputElement>(null);
