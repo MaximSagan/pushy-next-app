@@ -88,7 +88,13 @@ export default function Home({ publicKey }: Props) {
             {JSON.stringify(putSubMutation.data?.message)}
           </code>
         </p>
-        <form className={styles.form} onSubmit={() => sendNotification()}>
+        <form
+          className={styles.form}
+          onSubmit={(e) => {
+            e.preventDefault();
+            sendNotification();
+          }}
+        >
           <label>Content:</label>
           <input type="text" ref={notificationContentRef} defaultValue="Hi" />
           <label>Send notification in (x) seconds:</label>
