@@ -13,6 +13,7 @@ const inter = Inter({ subsets: ['latin'] })
 export default function Home({ publicKey }: Props) {
   
   const hello = trpc.hello.useQuery({ text: 'client' });
+  const putSubMutation = trpc.putSub.useMutation();
 
   const [pushSub, setPushSub] = useState<PushSubscriptionJSON | null>(null)
 
@@ -43,10 +44,13 @@ export default function Home({ publicKey }: Props) {
         applicationServerKey: publicKey
       });
       setPushSub(newSub.toJSON());
+
+      const x = await putSubMutation.mutateAsync({ name: 'Bob', pushSub: newSub });
+      
     }
     requestPushNotifications().catch(console.error);
     
-  })
+  }, [publicKey])
 
   return (
     <>
@@ -63,6 +67,9 @@ export default function Home({ publicKey }: Props) {
           <p>
             Sub:&nbsp;
             <code className={styles.code}>{JSON.stringify(pushSub)}</code>
+          </p>
+          <p>Result:&nbsp;
+            <code className={styles.code}>{JSON.stringify(putSubMutation.data?.result)}</code>   
           </p>
         </div>
       </main>
