@@ -4,7 +4,7 @@ import { Inter } from '@next/font/google'
 import styles from '../styles/Home.module.css'
 
 import { trpc } from '../utils/trpc';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GetServerSideProps } from 'next'
 
 
@@ -14,6 +14,7 @@ export default function Home({ publicKey }: Props) {
   
   const hello = trpc.hello.useQuery({ text: 'client' });
   const putSubMutation = trpc.putSub.useMutation();
+  const postNotificationMutation = trpc.postNotification.useMutation();
 
   const [pushSub, setPushSub] = useState<PushSubscriptionJSON | null>(null)
 
@@ -31,7 +32,10 @@ export default function Home({ publicKey }: Props) {
         return;
       }
       
-      const swRegistration = await navigator.serviceWorker.register("/sw.js");
+      let swRegistration = await navigator.serviceWorker.getRegistration();
+      if (!swRegistration) {
+        swRegistration = await navigator.serviceWorker.register("/sw.js");
+      }
       console.log(swRegistration);
       const permissionRequestResult =  await Notification.requestPermission();
       if (permissionRequestResult !== 'granted') {
@@ -45,12 +49,20 @@ export default function Home({ publicKey }: Props) {
       });
       setPushSub(newSub.toJSON());
 
-      const x = await putSubMutation.mutateAsync({ name: 'Bob', pushSub: newSub });
+      await putSubMutation.mutateAsync({ name: 'Bob', pushSub: newSub });
       
     }
     requestPushNotifications().catch(console.error);
     
   }, [publicKey])
+
+  const notificationContentRef = useRef<HTMLInputElement>(null);
+  const notificationCountdownRef = useRef<HTMLInputElement>(null);
+  const sendNotification = async () => {
+    const content = notificationContentRef.current?.value ?? "Hi, I'm a notification!";
+    const countdownSec = notificationCountdownRef.current?.valueAsNumber ?? 3;
+    postNotificationMutation.mutateAsync({ content, countdownSec })
+  }
 
   return (
     <>
@@ -65,11 +77,23 @@ export default function Home({ publicKey }: Props) {
           <p>From TRPC: { hello.data ? hello.data.greeting : 'Loading...'}</p>
           <p>Public key: {publicKey}</p>
           <p>
-            Sub:&nbsp;
+            Push sub:&nbsp;
             <code className={styles.code}>{JSON.stringify(pushSub)}</code>
           </p>
-          <p>Result:&nbsp;
-            <code className={styles.code}>{JSON.stringify(putSubMutation.data?.result)}</code>   
+          <p>Put sub result:&nbsp;
+            <code className={styles.code}>{JSON.stringify(putSubMutation.data?.message)}</code>   
+          </p>
+          <p>
+            <form onSubmit={() => sendNotification()}>
+              <label>Content:</label>
+              <input type="text" ref={notificationContentRef} />
+              <label>Send notification in (x) seconds:</label>
+              <input type="number" ref={notificationCountdownRef} />
+              <button type="submit">Send notification</button>
+            </form>
+          </p>
+          <p>Send notification result:&nbsp;
+            <code className={styles.code}>{JSON.stringify(postNotificationMutation.data?.results)}</code>   
           </p>
         </div>
       </main>
