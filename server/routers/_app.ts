@@ -59,7 +59,7 @@ export const appRouter = router({
     )
     .mutation(async ({ input }) => {
       const { content, countdownSec } = input;
-      wait(countdownSec * 1000);
+      await wait(countdownSec * 1000);
 
       const results: { [name: string]: any } = {};
       for (const pushUser of pushUsers) {
