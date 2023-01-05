@@ -9,7 +9,7 @@ try {
     process.env.VAPID_PRIVATE_KEY as string
   );
 } catch (e) {
-  console.error('Failed to set vapid details for web-push', e);
+  console.error("Failed to set vapid details for web-push", e);
 }
 
 type UserPushSub = {
@@ -74,7 +74,7 @@ export const appRouter = router({
             e instanceof Error ? e.message : "Unknown error";
         }
       }
-      return {results};
+      return { results };
     }),
 });
 // export type definition of API

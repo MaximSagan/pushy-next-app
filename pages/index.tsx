@@ -1,47 +1,45 @@
-import Head from 'next/head'
-import Image from 'next/image'
-import { Inter } from '@next/font/google'
-import styles from '../styles/Home.module.css'
+import Head from "next/head";
+import Image from "next/image";
+import { Inter } from "@next/font/google";
+import styles from "../styles/Home.module.css";
 
-import { trpc } from '../utils/trpc';
-import { useEffect, useRef, useState } from 'react';
-import { GetServerSideProps } from 'next'
+import { trpc } from "../utils/trpc";
+import { useEffect, useRef, useState } from "react";
+import { GetServerSideProps } from "next";
 
-
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ["latin"] });
 
 export default function Home({ publicKey }: Props) {
-  
-  const hello = trpc.hello.useQuery({ text: 'client' });
+  const hello = trpc.hello.useQuery({ text: "client" });
   const putSubMutation = trpc.putSub.useMutation();
   const postNotificationMutation = trpc.postNotification.useMutation();
 
-  const [pushSub, setPushSub] = useState<PushSubscriptionJSON | null>(null)
+  const [pushSub, setPushSub] = useState<PushSubscriptionJSON | null>(null);
 
   useEffect(() => {
     console.log(globalThis.constructor.name);
     const requestPushNotifications = async () => {
-      const isSupported = "serviceWorker" in navigator && "PushManager" in window;
+      const isSupported =
+        "serviceWorker" in navigator && "PushManager" in window;
       if (!isSupported) {
-        console.error('Not supported');
+        console.error("Not supported");
         return;
       }
 
       if (!publicKey) {
-        console.error('No key');
+        console.error("No key");
         return;
       }
-      
+
       let swRegistration = await navigator.serviceWorker.getRegistration();
-      console.log(swRegistration);
       if (!swRegistration) {
         swRegistration = await navigator.serviceWorker.register("/sw.js");
       }
       console.log(swRegistration);
 
-      const permissionRequestResult =  await Notification.requestPermission();
-      if (permissionRequestResult !== 'granted') {
-        console.error('Need to grant permission');
+      const permissionRequestResult = await Notification.requestPermission();
+      if (permissionRequestResult !== "granted") {
+        console.error("Need to grant permission");
         return;
       }
       const serviceWorker = await navigator.serviceWorker.ready;
@@ -49,24 +47,25 @@ export default function Home({ publicKey }: Props) {
       if (!sub) {
         sub = await serviceWorker.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: publicKey
+          applicationServerKey: publicKey,
         });
       }
+      console.log(sub);
       setPushSub(sub.toJSON());
 
-      await putSubMutation.mutateAsync({ name: 'Bob', pushSub: sub });   
-    }
+      await putSubMutation.mutateAsync({ name: "Bob", pushSub: sub });
+    };
     requestPushNotifications().catch(console.error);
-    
-  }, [publicKey, putSubMutation])
+  }, [publicKey]);
 
   const notificationContentRef = useRef<HTMLInputElement>(null);
   const notificationCountdownRef = useRef<HTMLInputElement>(null);
   const sendNotification = async () => {
-    const content = notificationContentRef.current?.value ?? "Hi, I'm a notification!";
+    const content =
+      notificationContentRef.current?.value ?? "Hi, I'm a notification!";
     const countdownSec = notificationCountdownRef.current?.valueAsNumber ?? 3;
-    postNotificationMutation.mutateAsync({ content, countdownSec })
-  }
+    postNotificationMutation.mutateAsync({ content, countdownSec });
+  };
 
   return (
     <>
@@ -77,34 +76,44 @@ export default function Home({ publicKey }: Props) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className={styles.main}>
-          <p>From TRPC: { hello.data ? hello.data.greeting : 'Loading...'}</p>
-          <p>Public key: {publicKey}</p>
-          <p>
-            Push sub:&nbsp;
-            <code className={styles.code}>{JSON.stringify(pushSub)}</code>
-          </p>
-          <p>Put sub result:&nbsp;
-            <code className={styles.code}>{JSON.stringify(putSubMutation.data?.message)}</code>   
-          </p>
-          <form className={styles.form} onSubmit={() => sendNotification()}>
-            <label>Content:</label>
-            <input type="text" ref={notificationContentRef} defaultValue="Hi" />
-            <label>Send notification in (x) seconds:</label>
-            <input type="number" ref={notificationCountdownRef} defaultValue={3}  />
-            <button type="submit">Send notification</button>
-          </form>
-          <p>Send notification result:&nbsp;
-            <code className={styles.code}>{JSON.stringify(postNotificationMutation.data?.results)}</code>   
-          </p>
+        <p>From TRPC: {hello.data ? hello.data.greeting : "Loading..."}</p>
+        <p>Public key: {publicKey}</p>
+        <p>
+          Push sub:&nbsp;
+          <code className={styles.code}>{JSON.stringify(pushSub)}</code>
+        </p>
+        <p>
+          Put sub result:&nbsp;
+          <code className={styles.code}>
+            {JSON.stringify(putSubMutation.data?.message)}
+          </code>
+        </p>
+        <form className={styles.form} onSubmit={() => sendNotification()}>
+          <label>Content:</label>
+          <input type="text" ref={notificationContentRef} defaultValue="Hi" />
+          <label>Send notification in (x) seconds:</label>
+          <input
+            type="number"
+            ref={notificationCountdownRef}
+            defaultValue={3}
+          />
+          <button type="submit">Send notification</button>
+        </form>
+        <p>
+          Send notification result:&nbsp;
+          <code className={styles.code}>
+            {JSON.stringify(postNotificationMutation.data?.results)}
+          </code>
+        </p>
       </main>
     </>
   );
 }
 
-type Props = { publicKey: string | null; }
+type Props = { publicKey: string | null };
 
-export const getServerSideProps: GetServerSideProps<Props> = async (_ctx) =>{
+export const getServerSideProps: GetServerSideProps<Props> = async (_ctx) => {
   return {
     props: { publicKey: process.env.VAPID_PUBLIC_KEY ?? null },
   };
-}
+};
