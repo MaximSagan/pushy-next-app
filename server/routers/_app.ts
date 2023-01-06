@@ -61,12 +61,17 @@ export const appRouter = router({
       const { content, countdownSec } = input;
       await wait(countdownSec * 1000);
 
+      const notification: NotificationOptions & {title: string} = {
+        title: 'Hey hey',
+        body: content
+      };
+
       const results: { [name: string]: any } = {};
       for (const pushUser of pushUsers) {
         try {
           const result = await webpush.sendNotification(
             pushUser.pushSub as any,
-            content
+            JSON.stringify({ notification })
           );
           results[pushUser.name] = result;
         } catch (e) {
