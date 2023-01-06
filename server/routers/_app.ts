@@ -12,12 +12,7 @@ try {
   console.error("Failed to set vapid details for web-push", e);
 }
 
-type UserPushSub = {
-  name: string;
-  pushSub: PushSubscriptionJSON;
-};
-
-let pushUsers: UserPushSub[] = [];
+const pushUsers = new Map<string, PushSubscriptionJSON>();
 
 export const appRouter = router({
   hello: procedure
@@ -40,13 +35,13 @@ export const appRouter = router({
       })
     )
     .mutation(({ input }) => {
-      // Get rid of any subs with same name or endpoint
-      pushUsers = pushUsers.filter(
-        (existingSub) =>
-          existingSub.name !== input.name &&
-          existingSub.pushSub.endpoint !== input.pushSub.endpoint
-      );
-      pushUsers.push({ name: input.name, pushSub: input.pushSub });
+      pushUsers.forEach((existingSub, existingSubUserName) => {
+        if (existingSub.endpoint === input.pushSub.endpoint) {
+          // Get rid of any subs with same endpoint so we don't end up with the same endpoint listed twice for two different users
+          pushUsers.delete(existingSubUserName);
+        }
+      });
+      pushUsers.set(input.name, input.pushSub);
       return { message: "Registered sub" };
     }),
 
@@ -61,22 +56,21 @@ export const appRouter = router({
       const { content, countdownSec } = input;
       await wait(countdownSec * 1000);
 
-      const notification: NotificationOptions & {title: string} = {
-        title: 'Hey hey',
-        body: content
+      const notification: NotificationOptions & { title: string } = {
+        title: "Hey hey",
+        body: content,
       };
 
       const results: { [name: string]: any } = {};
-      for (const pushUser of pushUsers) {
+      for (const [userName, pushSub] of pushUsers.entries()) {
         try {
           const result = await webpush.sendNotification(
-            pushUser.pushSub as any,
+            pushSub as any,
             JSON.stringify({ notification })
           );
-          results[pushUser.name] = result;
+          results[userName] = result;
         } catch (e) {
-          results[pushUser.name] =
-            e instanceof Error ? e.message : "Unknown error";
+          results[userName] = e instanceof Error ? e.message : "Unknown error";
         }
       }
       return { results };
